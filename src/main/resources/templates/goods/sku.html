@@ -199,10 +199,14 @@
             //如果删除的是第一个分类?
             attr_list_0 = attr_list_1.concat();
             attr_list_1.length = 0;
-
         } else {
             attr_list_1.length = 0;
         }
+
+        //从type数组中删除
+        var typeidx = global_type.indexOf(typename);
+        global_type.splice(typeidx,1);
+
         //从div中删除
         $("#type"+typename).remove();
         //刷新sku
@@ -247,7 +251,7 @@
             document.getElementById('skulist').innerHTML = html;
             //
             //if (attr_list_0.length)
-            var htmlattr= "<div style='border-radius:8px;margin-left:5px;margin-top:10px;width:490px;background:#eeeeee;'>";
+            var htmlattr= "<div style='border-radius:8px;margin-left:5px;margin-top:10px;width:490px;background:#eeeeee;display: flex;flex-direction: column;'>";
             for(i = 0; i < attr_list_0.length; i++) {
                 htmlattr += "<div>"+
                     "<div style='padding-left:10px;width:200px;float:left;'>"+attr_list_0[i]+"</div>"+
