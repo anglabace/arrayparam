@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" language="JavaScript" src="/js/jquery-1.6.2.min.js"></script>
+</head>
+<body>
+<form id='content_order'>
+<div id="main" style="display: flex;flex-direction: column;">
+<div>
+<input type="text" id="attrtype" name="attrtype" value="" />
+    <input type="button" value="添加sku分类" onclick="addattrtype()">
+</div>
+    <div id="attrlist" style="width:500px;background: #ffffff;overflow: hidden;">
+    </div>
+    <div id="skulist" style="width:500px;background: #ffffff;display: flex;flex-direction: column;overflow: hidden;">
+
+    </div>
+</div> <!--main end-->
+</form>
+
+<input type="button" value="保存sku" th:onclick="savesku([[${goodsId}]])" />
+
+<script>
+
+    //------------------------------------------------------------global var
+    //分类列表
+    var global_type = [];
+    //分类1的属性列表
+    var attr_list_0 = [];
+    //分类2的属性列表
+    var attr_list_1 = [];
+
+    //-------------------------------------------------------------method
+    //添加分类
+    function addattrtype() {
+        if (global_type.length >=2 ){
+            alert("属性种类数量不能超过2类");
+            return false;
+        }
+
+        var typename = document.getElementById('attrtype').value;
+        if (global_type.indexOf(typename)>=0) {
+            alert(typename+"已存在");
+            return false;
+        }
+        if (typename == "") {
+            alert("类别名称不可为空");
+            return false;
+        }
+
+        global_type.push(typename);
+        //addonetype(typename);
+        var html = "<div id='type"+typename+"' style='background: #ffffff;width:500px;min-height:130px;'>" +
+            "<div style='background: #eeeeee;text-align: left;height:30px;border-radius:5px;'>"+
+            "<div style='float:left;margin-left:10px;'>"+typename+"<input id='checkimage"+typename+"' type='checkbox' onclick='checkimage(\""+typename+"\")'/>图片</div>" +
+            "<div style='height:30px;float:right;'>" +
+            "<input type='text' id='"+typename+"attrnew' value='' />" +
+            "<input type='button' value='添加属性' onclick='addattr(\""+typename+"\")'/>" +
+            "<input type='button' value='删除分类' onclick='delete_type(\""+typename+"\")'/>" +
+            "</div></div>"+
+            "<div id='"+typename+"attrlist' style='background: #ffffff;width:500px;min-height:100px;overflow:hidden;'>" +
+            "</div>"+
+            "</div>";
+        //document.getElementById('attrlist').innerHTML += html;
+        $("#attrlist").append(html);
+    }
+
+    //设置是否上传图片
+    function checkimage(typename) {
+        var ischecked = document.getElementById("checkimage"+typename).checked;
+        alert(typename+":"+ischecked);
+        if (ischecked == true) {
+            for(i = 0; i < global_type.length; i++) {
+                //var curdispid = "dispup"+cur_attr_list[i];
+                //document.getElementById(curdispid).style.display="block";
+                if (global_type[i] == typename) {
+                    continue;
+                } else {
+                    var isotherchecked = document.getElementById("checkimage"+global_type[i]).checked;
+                    if (isotherchecked == true) {
+                        alert(global_type[i]+"已被选中使用图片，如果要设置"+typename+"使用图片请先把其他使用图片的分类取消");
+                        document.getElementById("checkimage"+typename).checked = false;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if (ischecked == true) {
+            settypeimagetrue(typename)
+        } else {
+            settypeimagefalse(typename)
+        }
+    }
+
+    //使一个分类下的attr支持上传图片
+    function settypeimagetrue(typename) {
+        var typeidx = global_type.indexOf(typename);
+        var cur_attr_list;
+        if (typeidx == 0) {
+            cur_attr_list = attr_list_0;
+        } else {
+            cur_attr_list = attr_list_1;
+        }
+        for(i = 0; i < cur_attr_list.length; i++) {
+            var curdispid = "dispup"+cur_attr_list[i];
+            document.getElementById(curdispid).style.display="block";
+        }
+    }
+
+    //使一个分类下的attr不支持上传图片
+    function settypeimagefalse(typename) {
+        var typeidx = global_type.indexOf(typename);
+        var cur_attr_list;
+        if (typeidx == 0) {
+            cur_attr_list = attr_list_0;
+        } else {
+            cur_attr_list = attr_list_1;
+        }
+        for(i = 0; i < cur_attr_list.length; i++) {
+            var curdispid = "dispup"+cur_attr_list[i];
+            document.getElementById(curdispid).style.display="none";
+            //清除图片
+            document.getElementById("img"+cur_attr_list[i]).src="";
+            document.getElementById("img"+cur_attr_list[i]).style.display="none";
+            //清除file的选中文件
+            document.getElementById("file"+cur_attr_list[i]).value='';
+        }
+    }
+
+    //预览图片
+    function preview(attrname) {
+           var fileObj = document.getElementById("file"+attrname);
+            var file=fileObj.files[0];
+            var r = new FileReader();
+            r.readAsDataURL(file);
+        r.onload=function(e){
+            document.getElementById("img"+attrname).src = e.target.result;
+            document.getElementById("img"+attrname).style.display="block";
+        }
+    }
+
+    //添加属性
+    function addattr(typename) {
+        var typeidx = global_type.indexOf(typename);
+        var cur_attr_list;
+        if (typeidx == 0) {
+             cur_attr_list = attr_list_0;
+        } else {
+             cur_attr_list = attr_list_1;
+        }
+        var attrname = document.getElementById(typename+'attrnew').value;
+        if (attr_list_0.indexOf(attrname)>=0) {
+            alert(attrname+"已存在");
+            return false;
+        }
+        if (attr_list_1.indexOf(attrname)>=0) {
+            alert(attrname+"已存在");
+            return false;
+        }
+
+        if (attrname == "") {
+            alert("属性名称不可为空");
+            return false;
+        }
+        cur_attr_list.push(attrname);
+        var ischecked = document.getElementById("checkimage"+typename).checked;
+        var imagetextdisp = "";
+        if (ischecked == true) {
+            imagetextdisp = "block";
+        } else {
+            imagetextdisp = "none";
+        }
+        var html = "<div id='attr"+attrname+"' style='margin-left:8px;margin-top:8px;width:80px;height:80px;line-height:80px;text-align:center;background: #eeeeee;float:left;border-radius:10px;position:relative;overflow:hidden;'>"+
+                "<img id='img"+attrname+"' src='' style='position:absolute;width:80px;height:80px;display: none;' />"+
+                "<div style='width:20px;height:20px;line-height:20px;background: #eeeeee;right:0px;position:absolute;text-align: center;' onclick='delete_attr(\""+typename+"\",\""+attrname+"\")'>x</div>"+
+            "<div id='dispup"+attrname+"' style='width:80px;height:20px;opacity:0.9;line-height:20px;background: rgb(138, 138, 238);bottom:0px;position:absolute;text-align: center;display: "+imagetextdisp+";'>"+
+            "<div style='position:relative;'>" +
+            "<input type='file' name='file"+attrname+"' id='file"+attrname+"' onchange='preview(\""+attrname+"\")' style='position:absolute;z-index:100;width:80px;height:20px;left:0px;background: #ff0000;opacity:0;'/>"+
+            "<div style='position: absolute;width:80px;height:20px;line-height:20px;opacity:0.9;font-size:12px;text-align:center;'>上传图片</div>"+
+            "</div></div>"+
+           attrname+
+        "</div>";
+        document.getElementById(typename+'attrlist').innerHTML += html;
+        refresh_sku_list();
+    }
+
+    //删除分类
+    function delete_type(typename) {
+        if (confirm("确认删除分类:"+typename+"吗？") == false) {
+            return false;
+        }
+        //清空数组
+        var typeidx = global_type.indexOf(typename);
+        if (typeidx == 0) {
+            attr_list_0.length = 0;
+            //如果删除的是第一个分类?
+            attr_list_0 = attr_list_1.concat();
+            attr_list_1.length = 0;
+
+        } else {
+            attr_list_1.length = 0;
+        }
+        //从div中删除
+        $("#type"+typename).remove();
+        //刷新sku
+        refresh_sku_list();
+    }
+
+    //删除属性
+    function delete_attr(typename,attrname) {
+        if (confirm("确认删除属性:"+attrname+"吗？") == false) {
+            return false;
+        }
+        var typeidx = global_type.indexOf(typename);
+        //alert(typename+";idx:"+typeidx);
+        var cur_attr_list;
+        if (typeidx == 0) {
+            cur_attr_list = attr_list_0;
+        } else {
+            cur_attr_list = attr_list_1;
+        }
+        //从数组中删除
+        var attridx = cur_attr_list.indexOf(attrname);
+        cur_attr_list.splice(attridx,1);
+        //从div中删除
+        $("#attr"+attrname).remove();
+        //刷新sku
+        refresh_sku_list();
+    }
+
+    //刷新sku列表
+    function refresh_sku_list() {
+        //只有一个为空
+        if (attr_list_0.length == 0 && attr_list_1.length == 0) {
+            document.getElementById('skulist').innerHTML = "";
+        }
+
+        if (attr_list_0.length > 0 && attr_list_1.length == 0) {
+            var html = "<div style='border-radius:8px;margin-left:5px;width:490px;background:#eeeeee;'>"+
+                "<div style='padding-left:10px;width:200px;float:left;'>属性</div>"+
+                "<div style='width:100px;float:left;'>价格</div>"+
+                "<div style='width:100px;float:left;'>库存</div>"+
+                "</div>";
+            document.getElementById('skulist').innerHTML = html;
+            //
+            //if (attr_list_0.length)
+            var htmlattr= "<div style='border-radius:8px;margin-left:5px;margin-top:10px;width:490px;background:#eeeeee;'>";
+            for(i = 0; i < attr_list_0.length; i++) {
+                htmlattr += "<div>"+
+                    "<div style='padding-left:10px;width:200px;float:left;'>"+attr_list_0[i]+"</div>"+
+                    "<div style='width:100px;float:left;'><input type='text' name='price_'"+attr_list_0[i]+" value='0.00'></div>"+
+                    "<div style='width:100px;float:left;'><input type='text' name='stock_'"+attr_list_0[i]+" value='0'></div>"+
+                    "</div>";
+            }
+            htmlattr +="</div>";
+            document.getElementById('skulist').innerHTML += htmlattr;
+        }
+
+        if (attr_list_0.length > 0 && attr_list_1.length > 0) {
+            var html = "<div style='border-radius:8px;margin-left:5px;width:490px;background:#eeeeee;'>"+
+                "<div style='padding-left:10px;width:210px;float:left;'>属性</div>"+
+                "<div style='width:100px;float:left;'>价格</div>"+
+                "<div style='width:120px;float:left;'>库存</div>"+
+                "</div>";
+            document.getElementById('skulist').innerHTML = html;
+
+            //得到每大行高度
+            var blockheight = attr_list_1.length*30;
+            for(i = 0; i < attr_list_0.length; i++) {
+                var html = "<div style='background: #eeeeee;border-radius: 5px;margin-left:5px;margin-top:5px;width:490px;'>"+
+                    "<div style='padding-left:10px;width:90px;float:left;height:"+blockheight+"px;line-height:"+blockheight+"px;'>"+attr_list_0[i]+"</div>"+
+                    "<div style='width:380px;float:left;display: flex;flex-direction: column;'>";
+
+                for(j = 0; j < attr_list_1.length; j++) {
+                    html += "<div style='width:400px;'><div style='width:100px;float:left;height:30px;line-height:30px;'>"+attr_list_1[j]+"</div>"+
+                            "<div style='float:left;width:100px;'><input type='text' id='price_"+attr_list_0[i]+"_"+attr_list_1[j]+"' value='0.00'></div>"+
+                            "<div style='float:left;width:100px;'><input type='text' id='stock_"+attr_list_0[i]+"_"+attr_list_1[j]+"' value='0'></div></div>";
+                }
+                html += "</div>"+
+                    "</div>";
+                document.getElementById('skulist').innerHTML += html;
+            }
+        }
+    }
+
+    //提交sku的数据
+    function savesku(goodsId) {
+        //alert(goodsId);
+        var postdata = {};
+        postdata['goodsId'] = goodsId;
+        var typelist = [];
+        //得到两个分类
+        for(i = 0; i < global_type.length; i++) {
+            var typeobj = {"typeName":global_type[i]};
+            var isotherchecked = document.getElementById("checkimage"+global_type[i]).checked;
+            if (isotherchecked == true) {
+                typeobj["isImage"] = 1;
+            } else {
+                typeobj["isImage"] = 0;
+            }
+
+            //得到下面的属性:
+            var cur_attr_list;
+            if (i == 0) {
+                cur_attr_list = attr_list_0;
+            } else {
+                cur_attr_list = attr_list_1;
+            }
+            var attrlist=[];
+            for(j = 0; j < cur_attr_list.length; j++) {
+                attrlist.push(cur_attr_list[j]);
+            }
+            typeobj['attrList'] = attrlist;
+
+            //typeobj
+            typelist.push(typeobj);
+        }
+
+        postdata["typeList"] = typelist;
+
+        //遍历sku:
+        var skulist = [];
+        for(i = 0; i < attr_list_0.length; i++) {
+            for(j = 0; j < attr_list_1.length; j++) {
+                var key = attr_list_0[i]+"_"+attr_list_1[j];
+                var price = document.getElementById('price_'+key).value;
+                var stock = document.getElementById('stock_'+key).value;
+                var skuone = {"key":key,"price":price,"stock":stock};
+                skulist.push(skuone);
+            }
+        }
+
+        postdata["skuList"] = skulist;
+
+        var filelist = [];
+        var cur_attr_list;
+        if (i == 0) {
+            cur_attr_list = attr_list_0;
+        } else {
+            cur_attr_list = attr_list_1;
+        }
+        for(i = 0; i < global_type.length; i++) {
+            var typeobj = {"typename": global_type[i]};
+            var isotherchecked = document.getElementById("checkimage" + global_type[i]).checked;
+            if (isotherchecked == true) {
+                if (i == 0) {
+                    cur_attr_list = attr_list_0;
+                } else if (i == 1) {
+                    cur_attr_list = attr_list_1;
+                }
+            }
+        }
+        //var postdatafile = {};
+        var postdatafile=new FormData();
+        //
+        for(i = 0; i < cur_attr_list.length; i++) {
+            var fileid = "file"+cur_attr_list[i];
+            if ("undefined" == typeof($("#"+fileid)[0].files[0])) {
+                continue;
+            } else {
+                //
+                var fileobj = {"fileName":cur_attr_list[i],"file":$("#"+fileid)[0].files[0]};
+                postdatafile.append(["file_"+cur_attr_list[i]],$("#"+fileid)[0].files[0]);
+                filelist.push(fileobj);
+            }
+        }
+        postdata["fileList"] = filelist;
+        console.log(postdata);
+
+        var postdatajson = {};
+        //postdatafile['json'] = JSON.stringify(postdata);
+        postdatafile.append("json",JSON.stringify(postdata));
+        console.log(postdatafile);
+        alert("begin ajax");
+        $.ajax({
+            type:"POST",
+            url:"/goods/skuadded",
+            data:postdatafile,
+            //返回数据的格式
+            datatype: "text",//"xml", "html", "script", "json", "jsonp", "text".
+            processData:false, // 将数据转换成对象，不对数据做处理，故 processData: false
+            contentType:false,    // 不设置数据类型
+            //成功返回之后调用的函数
+            success:function(data){
+                alert(data);
+            },
+            //调用执行后调用的函数
+            complete: function(XMLHttpRequest, textStatus){
+                //alert(XMLHttpRequest.responseText);
+                //alert(textStatus);
+            },
+            //调用出错执行的函数
+            error: function(){
+                //请求出错处理
+                alert('error');
+            }
+        });
+    }
+</script>
+</body>
+</html>
